@@ -11,6 +11,7 @@
 	(at your option) any later version.
 	see <http://www.gnu.org/licenses/>.
 
+	Copyright 2013
 	Author: George Hansper george@hansper.id.au
  */
  

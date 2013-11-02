@@ -1,4 +1,14 @@
 #!/usr/bin/python
+#
+#	This program is free software: you can redistribute it and/or modify
+#	it under the terms of the GNU General Public License as published by
+#	the Free Software Foundation, either version 3 of the License, or
+#	(at your option) any later version.
+#	see <http://www.gnu.org/licenses/>.
+#
+#	Copyright 2013
+#	Author: George Hansper george@hansper.id.au
+
 
 import sys, getopt, time, socket
 # For checking if file exists, and errno translation - os.strerror()
