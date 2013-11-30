@@ -53,6 +53,7 @@
 #define RIGHT_MASK	0x02
 #define FLASH_MASK	0x04
 #define SKIRT_MASK	0x08
+#define ALT_MASK	0x10
 
 // Start with the LAMP_TEST mode, which switches to STEADY when complete
 int left_mode=LAMP_TEST;
@@ -78,6 +79,13 @@ byte GRN_R=0;
 byte BLU_R=0;
 byte SKIRT_LED=0;
 
+// Alt color for pulse/blink
+byte RED_L_ALT=0;
+byte GRN_L_ALT=0;
+byte BLU_L_ALT=0;
+byte RED_R_ALT=0;
+byte GRN_R_ALT=0;
+byte BLU_R_ALT=0;
 // Flash color (one-shot transient
 byte RED_FLASH_L=0;
 byte GRN_FLASH_L=0;
@@ -183,63 +191,28 @@ void parse_cmd (char *cmd_str) {
 	while(*cmd_str != '\0' ) {
 		if ( strcmp(cmd_str, (char *) "RED") == 0 ) {
 			set_mode(which_leds,STEADY);
-			if ( which_leds & LEFT_MASK ) {
-				RED_L=255; GRN_L=0; BLU_L=0;
-			}
-			if ( which_leds & RIGHT_MASK ) {
-				RED_R=255; GRN_R=0; BLU_R=0;
-			}
+			set_led_color(which_leds, 255, 0, 0);
 		} else if ( strcmp(cmd_str, (char *) "GREEN") == 0 ) {
 			set_mode(which_leds,STEADY);
-			if ( which_leds & LEFT_MASK ) {
-				RED_L=0; GRN_L=255; BLU_L=0;
-			}
-			if ( which_leds & RIGHT_MASK ) {
-				RED_R=0; GRN_R=255; BLU_R=0;
-			}
+			set_led_color(which_leds, 0, 255, 0);
 		} else if ( strcmp(cmd_str, (char *) "BLUE") == 0 ) {
 			set_mode(which_leds,STEADY);
-			if ( which_leds & LEFT_MASK ) {
-				RED_L=0; GRN_L=0; BLU_L=255;
-			}
-			if ( which_leds & RIGHT_MASK ) {
-				RED_R=0; GRN_R=0; BLU_R=255;
-			}
+			set_led_color(which_leds, 0, 0, 255);
 		} else if ( strcmp(cmd_str, (char *) "YELLOW") == 0 ) {
 			set_mode(which_leds,STEADY);
-			if ( which_leds & LEFT_MASK ) {
-				RED_L=255; GRN_L=255; BLU_L=0;
-			}
-			if ( which_leds & RIGHT_MASK ) {
-				RED_R=255; GRN_R=255; BLU_R=0;
-			}
+			set_led_color(which_leds, 255, 255, 0);
 		} else if ( strcmp(cmd_str, (char *) "AMBER") == 0 ) {
 			set_mode(which_leds,STEADY);
-			if ( which_leds & LEFT_MASK ) {
-				RED_L=255; GRN_L=128; BLU_L=0;
-			}
-			if ( which_leds & RIGHT_MASK ) {
-				RED_R=255; GRN_R=128; BLU_R=0;
-			}
+			set_led_color(which_leds, 255, 128, 0);
 		} else if ( strcmp(cmd_str, (char *) "WHITE" ) == 0 || strcmp(cmd_str, (char *) "ON" ) == 0 ) {
 			set_mode(which_leds,STEADY);
-			if ( which_leds & LEFT_MASK ) {
-				RED_L=255; GRN_L=255; BLU_L=255;
-			}
-			if ( which_leds & RIGHT_MASK ) {
-				RED_R=255; GRN_R=255; BLU_R=255;
-			}
+			set_led_color(which_leds, 255, 255, 255);
 			if ( which_leds & SKIRT_MASK ) {
 				SKIRT_LED=1;
 			}
 		} else if ( strcmp(cmd_str, (char *) "OFF") == 0 ) {
 			set_mode(which_leds,STEADY);
-			if ( which_leds & LEFT_MASK ) {
-				RED_L=0; GRN_L=0; BLU_L=0;
-			}
-			if ( which_leds & RIGHT_MASK ) {
-				RED_R=0; GRN_R=0; BLU_R=0;
-			}
+			set_led_color(which_leds, 0, 0, 0);
 			if ( which_leds & SKIRT_MASK ) {
 				SKIRT_LED=0;
 			}
@@ -249,6 +222,10 @@ void parse_cmd (char *cmd_str) {
 			which_leds=RIGHT_MASK;
 		} else if ( strcmp(cmd_str, (char *) "SKIRT") == 0 ) {
 			which_leds=SKIRT_MASK;
+		} else if ( strcmp(cmd_str, (char *) "ALT") == 0 ) {
+			which_leds|=ALT_MASK;
+		} else if ( strcmp(cmd_str, (char *) "000") == 0 || strcmp(cmd_str,(char *) "POLICE") == 0 ) {
+			set_mode(which_leds,POLICE);
 		} else if ( *cmd_str >= '0' && *cmd_str <= '9' ) {
 			str=cmd_str;
 			G=-1;
@@ -268,27 +245,24 @@ void parse_cmd (char *cmd_str) {
 								}
 							}
 						}
-						if ( which_leds & LEFT_MASK ) {
-							RED_L=R; GRN_L=G, BLU_L=B;
-							if ( T > 0 ) {
-								left_counter = T;
-							}
-						} 
-						if ( which_leds & RIGHT_MASK ) {
-							RED_R=R; GRN_R=G, BLU_R=B;
-							if ( T > 0 ) {
-								right_counter = T;
-							}
-						}
+						set_led_color(which_leds, R, G, B);
 						if ( which_leds & FLASH_MASK ) {
-							RED_FLASH_R=R; GRN_FLASH_R=G, BLU_FLASH_R=B;
-							RED_FLASH_L=R; GRN_FLASH_L=G, BLU_FLASH_L=B;
 							if ( T > 0 && T <= 30000 ) {
 								flash_counter_default = T;
 								flash_counter = flash_counter_default;
 							}
+						} else {
+							if ( T > 0 ) {
+								if ( which_leds & LEFT_MASK ) {
+									left_counter = T;
+								}
+								if ( which_leds & RIGHT_MASK ) {
+									right_counter = T;
+								}
+							}
+							set_mode(which_leds,STEADY);
 						}
-						set_mode(which_leds,STEADY);
+						which_leds &= ~(FLASH_MASK|ALT_MASK);
 					}
 				}
 			}
@@ -309,9 +283,10 @@ void parse_cmd (char *cmd_str) {
 			} 
 		} else if ( strcmp(cmd_str, (char *) "PERIOD") == 0 ) {
 			// Set loop_count limits
-			str = cmd_str+6;
-			if ( *str == '=' ) {
-				T=strtol(++str,&str);	// T is in milliseconds
+			cmd_str = cmd_str+6;
+			if ( *cmd_str == '=' || *cmd_str == ' ' ) {
+				str=++cmd_str;
+				T=strtol(str,&str);	// T is in milliseconds
 				if ( T >= 20 && T <= 10000 ) {
 					// 10 seconds is a reasonable limit
 					period = T/10;
@@ -321,15 +296,13 @@ void parse_cmd (char *cmd_str) {
 			set_mode(which_leds,STEADY);
 		} else if ( strcmp(cmd_str, (char *) "FLASH") == 0 ) {
 			flash_counter = flash_counter_default;
-			which_leds = FLASH_MASK;
+			which_leds |= FLASH_MASK;
 		} else if ( strcmp(cmd_str, (char *) "BLINK") == 0 ) {
 			set_mode(which_leds,BLINK);
 		} else if ( strcmp(cmd_str, (char *) "STROBE") == 0 ) {
 			set_mode(which_leds,STROBE);
 		} else if ( strcmp(cmd_str, (char *) "PULSE") == 0 ) {
 			set_mode(which_leds,PULSE);
-		} else if ( strcmp(cmd_str, (char *) "000") == 0 || strcmp(cmd_str,(char *) "POLICE") == 0 ) {
-			set_mode(which_leds,POLICE);
 		} else if ( strcmp(cmd_str, (char *) "RAINBOW") == 0 ) {
 			set_mode(which_leds,RAINBOW);
 		} else if ( strcmp(cmd_str, (char *) "EFFECT") == 0 ) {
@@ -351,13 +324,14 @@ void parse_cmd (char *cmd_str) {
 			which_leds = (LEFT_MASK|RIGHT_MASK);
 			cmd_str++;
 		} else if ( *cmd_str == ' ' || *cmd_str == '=' || *cmd_str == '\t' ) {
+			/* Skip space, tab, = */
 			cmd_str++;
 			continue;
 		} else {
 			/* Command line not valid, or finished */
 			break;
 		}
-		/* Move cmd_str pointer to next item - skip space, tab = */
+		/* Move cmd_str pointer to next item - space, tab = \n \0 */
 		while ( *cmd_str != '\0' && *cmd_str != ' ' && *cmd_str != '\n' && *cmd_str != '=' && *cmd_str != '\t' ) {
 			cmd_str++;
 		}
@@ -382,6 +356,8 @@ void launch_effect () {
 void update_leds(int which,int mode) {
 	byte R,G,B;
 	long fade;
+	long fade_alt;
+	long half_period;
 	// FLASH overrides the current mode for LEFT and RIGHT leds
 	if ( flash_counter > 0 && ( which & (LEFT_MASK|RIGHT_MASK) != 0 ) ) {
 		set_leds((LEFT_MASK|RIGHT_MASK),RED_FLASH_L,GRN_FLASH_L,BLU_FLASH_L);			
@@ -395,37 +371,41 @@ void update_leds(int which,int mode) {
 		break;
 	case BLINK:		// blink left/right
 		if( (loop_count/(period/2)) % 2 ) {
-			set_leds((which & LEFT_MASK),RED_L,GRN_L,BLU_L);			
- 			set_leds((which & RIGHT_MASK),0,0,0);			
+			set_leds((which & LEFT_MASK), RED_L,    GRN_L,    BLU_L    );			
+ 			set_leds((which & RIGHT_MASK),RED_R_ALT,GRN_R_ALT,BLU_R_ALT);			
 			set_leds((which & SKIRT_MASK),1,0,0);
 		} else {
-			set_leds((which & RIGHT_MASK),RED_R,GRN_R,BLU_R);	
- 			set_leds((which & LEFT_MASK),0,0,0);			
+			set_leds((which & RIGHT_MASK),RED_R,    GRN_R,    BLU_R    );
+ 			set_leds((which & LEFT_MASK) ,RED_L_ALT,GRN_L_ALT,BLU_L_ALT);
 			set_leds((which & SKIRT_MASK),0,0,0);
 		}
 		break;
 	case STROBE:		// blink together (Strobe)
 		if( (loop_count/(period/2)) % 2 ) {
-			set_leds((which & LEFT_MASK),RED_L,GRN_L,BLU_L);			
+			set_leds((which & LEFT_MASK), RED_L,GRN_L,BLU_L);			
 			set_leds((which & RIGHT_MASK),RED_R,GRN_R,BLU_R);	
 			set_leds((which & SKIRT_MASK),1,0,0);
 		} else {
- 			set_leds(which,0,0,0);			
+ 			set_leds((which & RIGHT_MASK),RED_R_ALT,GRN_R_ALT,BLU_R_ALT);			
+ 			set_leds((which & LEFT_MASK) ,RED_L_ALT,GRN_L_ALT,BLU_L_ALT);
+ 			set_leds((which & SKIRT_MASK),0,0,0);			
 		}
 		break;
 	case PULSE:		// fade pulse
-		fade = abs(loop_count % period - period/2);
+		half_period = period/2;
+		fade = abs(loop_count % period - half_period);
+		fade_alt = half_period - fade;
 		// fade is an integer in the range 0 ... period/2, counting up, then down
 		if ( which & LEFT_MASK ) {
-			R=RED_L * fade / (period/2);
-			G=GRN_L * fade / (period/2);
-			B=BLU_L * fade / (period/2);
+			R=( RED_L * fade + RED_L_ALT * fade_alt ) / (half_period);
+			G=( GRN_L * fade + GRN_L_ALT * fade_alt ) / (half_period);
+			B=( BLU_L * fade + BLU_L_ALT * fade_alt ) / (half_period);
 			set_leds(LEFT_MASK,R,G,B);			
 		}
 		if ( which & RIGHT_MASK ) {
-			R=RED_R * fade / (period/2);
-			G=GRN_R * fade / (period/2);
-			B=BLU_R * fade / (period/2);
+			R=( RED_R * fade + RED_R_ALT * fade_alt ) / (half_period);
+			G=( GRN_R * fade + GRN_R_ALT * fade_alt ) / (half_period);
+			B=( BLU_R * fade + BLU_R_ALT * fade_alt ) / (half_period);
 			set_leds(RIGHT_MASK,R,G,B);	
 		}
 		if ( which & SKIRT_MASK ) {
@@ -508,7 +488,39 @@ void update_leds(int which,int mode) {
 	} /* switch mode */
 } /* update_leds() */
 
+void set_led_color(int which, byte R, byte G, byte B) {
+	if ( which_leds & ALT_MASK ) {
+		if ( which_leds & LEFT_MASK ) {
+			RED_L_ALT=R; GRN_L_ALT=G; BLU_L_ALT=B;
+		}
+		if ( which_leds & RIGHT_MASK ) {
+			RED_R_ALT=R; GRN_R_ALT=G; BLU_R_ALT=B;
+		}
+	} else if ( which_leds & FLASH_MASK ) {
+		if ( which_leds & LEFT_MASK ) {
+			RED_FLASH_L=R; GRN_FLASH_L=G, BLU_FLASH_L=B;
+		}
+		if ( which_leds & RIGHT_MASK ) {
+			RED_FLASH_R=R; GRN_FLASH_R=G, BLU_FLASH_R=B;
+		}
+	} else {
+		if ( which_leds & LEFT_MASK ) {
+			RED_L=R; GRN_L=G; BLU_L=B;
+		}
+		if ( which_leds & RIGHT_MASK ) {
+			RED_R=R; GRN_R=G; BLU_R=B;
+		}
+			if ( which_leds & SKIRT_MASK ) {
+				SKIRT_LED=0;
+			}
+	}
+}
+
 void set_mode(int which, int mode) {
+	if ( which & ALT_MASK ) {
+		// setting the ALT color does not affect the mode
+		return;
+	}
 	if ( which & LEFT_MASK ) {
 		left_mode = mode;
 	}
@@ -644,6 +656,15 @@ PROGMEM prog_uchar usage_txt[] = {
 "To blink/pulse the LED indepenantly, use:\n"
 "	LEFT=128,0,255 PULSE\n"
 "	RIGHT GREEN PULSE\n"
+"\n"
+"To set the alternate color for pulse/blink/strobe:\n"
+"	ALT 128,128,128\n"
+"		... set alternate color for both leds\n"
+"	LEFT ALT 128,0,128\n"
+"		... set alternate color for LEFT led only\n"
+"	RIGHT GREEN PULSE ALT BLUE\n"
+"		... fade RIGHT led between green and blue\n"
+"The default ALT color is OFF\n"
 "\n"
 "To flash both LEDs breifly a different color use the following:\n"
 "	FLASH=R,G,B,T\n"
