@@ -35,6 +35,7 @@ query_current_problems= \
 Filter: acknowledged = 0
 Filter: scheduled_downtime_depth = 0
 Filter: host_scheduled_downtime_depth = 0
+Filter: groups < dont-show-on-leds
 Stats: state = 0
 Stats: state = 1
 Stats: state = 2
@@ -45,6 +46,7 @@ query_current_problems_wait_for_event= \
 Filter: acknowledged = 0
 Filter: scheduled_downtime_depth = 0
 Filter: host_scheduled_downtime_depth = 0
+Filter: groups < dont-show-on-leds
 WaitTrigger: state
 WaitTimeout: _waittimeout_
 Stats: state = 0
@@ -58,6 +60,7 @@ Filter: acknowledged = 0
 Filter: scheduled_downtime_depth = 0
 Filter: host_scheduled_downtime_depth = 0
 Filter: last_state_change > _when_
+Filter: groups < dont-show-on-leds
 Stats: state = 0
 Stats: state = 1
 Stats: state = 2
@@ -186,6 +189,9 @@ def livestatus_query(server,tcp_port,q,t_when):
 def set_leds(txt):
 	global ttyUSB_filename
 	print_v("Writing to %s:\n%s\n" % (ttyUSB_filename,txt))
+	if not os.path.exists(ttyUSB_filename):
+		print "File does not exist: %s" % (ttyUSB_filename)
+		return
 	try:
 		ttyUSB = open(ttyUSB_filename,'a')
 		ttyUSB.write(txt + "\n")
